@@ -1,0 +1,16 @@
+agents:
+  critic_agent:
+    model: "deepseek-chat"
+  research_agent:
+    model: "deepseek-chat"
+
+tools:
+  web_search_zhipu:
+    api_key: "b25797d47a13c6e6a175b9ca5813bb1a.UjMW7iDnGBvnswdR"
+    num_results: 2
+
+models:
+  - models: ["deepseek-chat"]
+    model_platform: "deepseek"
+    platform_api_key: "sk-017a6cfaabb94428bf8b45bae0eba4a8"
+    temperature: 0.7

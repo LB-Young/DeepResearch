@@ -4,5 +4,5 @@ from typing import Dict, Any, Optional, Iterator, Union
 
 class BaseAgent(ABC):
     @abstractmethod
-    async def execute(self, inputs: Dict[str, Any], properties: Dict[str, Any]) -> Iterator[Dict[str, Any]]:
+    async def step(self, inputs: Dict[str, Any], properties: Dict[str, Any]) -> Iterator[Dict[str, Any]]:
         pass

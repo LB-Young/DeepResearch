@@ -3,6 +3,7 @@ import uuid
 import json
 import sys
 import os
+from zhipuai import ZhipuAI
 from typing import Dict, Any, Iterator, Union
 from .base_tool import Tool
 
@@ -34,12 +35,14 @@ class WebSearchZhipuTool(Tool):
     
     # 工具属性
     properties = {}
+
+    def __init__(self, config: Dict[str, Any]):
+        self.api_key = config.get("api_key", "")
+        if not self.api_key:
+            raise ValueError("API key for Zhipu AI is required")
+        self.search_num = config.get("num_results", 5)
     
-    async def arun(self, inputs: Dict[str, Any], properties: Dict[str, Any]) -> Iterator[Dict[str, Any]]:
-        # 异步运行方法实现
-        return await self.run(inputs, properties)
-    
-    async def run(self, inputs: Dict[str, Any], properties: Dict[str, Any]) -> Union[str, Any]:
+    async def arun(self, inputs: Dict[str, Any], properties: Dict[str, Any] = {}) -> Iterator[Dict[str, Any]]:
         # 从输入中提取参数
         keyword = inputs.get("keyword", "")
         
@@ -48,50 +51,30 @@ class WebSearchZhipuTool(Tool):
             raise Exception("搜索关键词不能为空")
             
         try:
-            # 获取API密钥
-            api_key = load_local_api_keys('zhipu')
+            client = ZhipuAI(api_key=self.api_key)  # 填写您自己的APIKey
             
-            # 构建消息内容
-            msg = [
-                {
-                    "role": "user",
-                    "content": keyword
-                }
-            ]
+            response = client.web_search.web_search(
+                    search_engine="search_std",
+                    search_query=keyword,
+                    count=3,  # 返回结果的条数，范围1-50，默认10
+                    search_domain_filter="www.sohu.com",  # 只访问指定域名的内容
+                    search_recency_filter="noLimit",  # 搜索指定日期范围内的内容
+                    content_size="high"  # 控制网页摘要的字数，默认medium
+                )
             
-            # 设置API参数
-            tool = "web-search-pro"
-            url = "https://open.bigmodel.cn/api/paas/v4/tools"
-            request_id = str(uuid.uuid4())
-            data = {
-                "request_id": request_id,
-                "tool": tool,
-                "stream": False,
-                "messages": msg
-            }
-
-            # 发送API请求
-            resp = requests.post(
-                url,
-                json=data,
-                headers={'Authorization': api_key},
-                timeout=300
-            )
-            
-            # 处理响应结果
-            all_search = json.loads(resp.content.decode()).get('choices', [])
             all_result = []
-            
-            for item in all_search:
-                try:
-                    cur_result = ""
-                    for content in item['message']['tool_calls'][1]['search_result']:
-                        cur_result += content['content']
+
+            for index, item in enumerate(response.search_result):
+                try:  
+                    cur_result = f"## 第{index+1}条搜索结果:\n"
+                    cur_result += f"### 标题: {item.title}\n"
+                    cur_result += f"### 链接: {item.link}\n"
+                    cur_result += f"### 内容: {item.content}\n"
                     all_result.append(cur_result)
                 except:
                     continue
                     
-            return "\n".join(all_result)
+            return "\n\n".join(all_result)
             
         except Exception as e:
             raise Exception(f"智谱AI搜索失败: {str(e)}") 
