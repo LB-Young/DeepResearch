@@ -218,7 +218,7 @@ class ResearchAgent(BaseAgent):
         formatted_system_prompt = system_prompt_format.replace("{tools}", str(tools_info))
         explore_system_messages = [
             {"role": "user", "content": formatted_system_prompt},
-            {"role": "assistant", "content": "我会严格遵循要求，思考后作答，并且在生成工具调用信息之后立刻停止。"}
+            {"role": "assistant", "content": "我会严格遵循要求，思考后作答，并且在生成工具调用信息之后立刻停止,等待工具返回结果。"}
         ]
         return explore_system_messages
 
