@@ -55,11 +55,11 @@ class AgentMemory(BaseMemory):
         all_deep_research_messages = []
         for item in self.deep_research_memory:
             if isinstance(item, dict):
-                all_history_messages.append(item)
-            elif isinstance(item, HistoryMessage):
+                all_deep_research_messages.append(item)
+            elif isinstance(item, AgentMessage):
                 content = item.get_compressed_content()
                 role = item.get_role()
-                all_history_messages.append({"role": role, "content":content})
+                all_deep_research_messages.append({"role": role, "content":content})
         
         # memory roles: [user, assistant, user_function, xxx_agent]
         all_messages = []

@@ -72,15 +72,20 @@ class ResearchAgent(BaseAgent):
         # init cur research_agent input info
         self.agent_memory.clear()
         self.agent_memory.set_history(deep_research_memory.get_history())
-        self.agent_memory.set_deep_research_memory(deep_research_memory.get_deep_search_memory())
-        self.agent_memory.add_memory(deep_research_memory.get_query())
+        deep_research_memorys = deep_research_memory.get_deep_search_memory()
+        deep_research_query = deep_research_memory.get_query()
+        if deep_research_query != 0:
+            deep_research_memorys = deep_research_memorys[:-1]
+        self.agent_memory.set_deep_research_memory(deep_research_memorys)
+        self.agent_memory.add_memory(deep_research_query)
 
-        max_steps = self.config.get("max_steps", 10)
+        max_steps = self.agent_info.get("max_steps", 10)
         step = 0
 
         while step < max_steps:
             step += 1
 
+            # reason step
             reason_response = self.reason()
             async for item in reason_response:
                 yield_status = item['status']
@@ -88,18 +93,22 @@ class ResearchAgent(BaseAgent):
 
                 # "finished!" status represent the complete of this deep_research query instead of cur reason step
                 if yield_status != "finished!":
-                    yield AgentResponse("research_agent_reason", "reasoning……", yield_content, None)
+                    yield AgentResponse("research_agent_reason", "reasoning……", yield_content, deep_research_memory)
                 else:
                     full_response_content = self.agent_memory.get_full_response_content()
-                    deep_research_memory.add_memory({"role":"assistant", "content":full_response_content})
+                    # deep_research_memory.add_memory({"role":"assistant", "content":full_response_content})
                     yield AgentResponse("research_agent_reason", "finished!", yield_content, deep_research_memory)
-
+            
+            if "=>#" not in self.full_content:
+                break
+            
+            # act step
             act_response = self.act()
             async for item in act_response:
                 yield_content = item['content']
                 yield AgentResponse("research_agent_act", "act finished!", yield_content, deep_research_memory)
             
-            yield AgentResponse("research_agent_act", "finished!", yield_content, deep_research_memory)
+            yield AgentResponse("research_agent_act", "finished!", "", deep_research_memory)
 
     async def reason(self):
         """
@@ -111,7 +120,6 @@ class ResearchAgent(BaseAgent):
         all_history_messages, all_deep_research_messages, all_messages = self.agent_memory.get_model_messages()
         explore_system_messages = await self.get_explore_system_messages()
         all_request_messages = all_history_messages + all_deep_research_messages + explore_system_messages + all_messages
-
         response = await model_client.chat(all_request_messages, self.model)
         self.full_content = ""
         for item in response:
@@ -166,7 +174,7 @@ class ResearchAgent(BaseAgent):
                         "status": "act finished!",
                         "content": tool_results
                     }
-                    self.act_full_content = result
+                    self.act_full_content = tool_results
                 else:
                     yield {
                         "status": "acting……",
@@ -189,14 +197,14 @@ class ResearchAgent(BaseAgent):
                 }
                 self.act_full_content = f"工具{tool_name}参数解析失败，请重新生成完整工具调用信息。"
 
-            act_message = AgentMessage(
+        act_message = AgentMessage(
             role="user",
             content=self.act_full_content,
             message_type="function",
             message_from="research_agent_act",
             message_to="research_agent_reason"
             )
-            self.agent_memory.add_memory(act_message)
+        self.agent_memory.add_memory(act_message)
 
     async def get_explore_system_messages(self):
         """

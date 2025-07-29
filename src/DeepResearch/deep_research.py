@@ -33,14 +33,13 @@ class DeepResearch:
         deep_research_memory = DeepResearchMemory()
         deep_research_memory.add_memory([query_message])
         deep_research_memory.set_history(history)
-
         cur_step = 1
         while cur_step <= self.max_steps:
 
             #   Search agent's turn
             research_response = self.research_agent.step(deep_research_memory)
             
-            research_response_content = ""
+            research_response_content = "\n\n"
             async for response in research_response:
                 research_response_content += response.content
                 yield response.content
@@ -52,16 +51,15 @@ class DeepResearch:
                 message_from="research_agent",
                 message_to="critic_agent"
             ))
-            breakpoint()
 
             #   Critic agent's turn
-            critic_response = await self.critic_agent.step(deep_research_memory)
+            critic_response = self.critic_agent.step(deep_research_memory)
 
             critic_response_content = ""
             async for response in critic_response:
                 critic_response_content += response.content
                 yield response.content
-            
+                
             deep_research_memory.add_memory(AgentMessage(
                 role="user",
                 content=critic_response_content,

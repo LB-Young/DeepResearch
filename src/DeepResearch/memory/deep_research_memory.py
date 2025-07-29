@@ -22,16 +22,22 @@ class DeepResearchMemory(BaseMemory):
         return self.finished
 
     def add_memory(self, messages):
-        self.memory.extend(messages)
+        if isinstance(messages, list):
+            self.memory.extend(messages)
+        else:
+            self.memory.append(messages)
 
     def get_query(self):
-        return [self.memory[-1]]
+        if self.memory[-1].role == 'user':
+            return [self.memory[-1]]
+        else:
+            return []
 
     def compress_memory(self):
         pass
         
     def get_deep_search_memory(self):
-        return self.memory[:-1]
+        return self.memory
     
     def clear(self):
         self.memory = []

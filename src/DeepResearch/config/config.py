@@ -3,7 +3,7 @@
 This module dynamically loads configuration from config.yaml file
 and makes it available as a Python dictionary.
 """
-
+import os
 import yaml
 from pathlib import Path
 from typing import Dict, Any
@@ -18,7 +18,10 @@ def load_config() -> Dict[str, Any]:
         FileNotFoundError: If config.yaml doesn't exist
         yaml.YAMLError: If YAML parsing fails
     """
-    config_path = Path(__file__).parent / "config.yaml"
+    if os.path.exists("/Users/liubaoyang/Documents/YoungL/project/tmp_project/deep_research_config.yaml"):
+        config_path = "/Users/liubaoyang/Documents/YoungL/project/tmp_project/deep_research_config.yaml"
+    else:
+        config_path = Path(__file__).parent / "config.yaml"
     with open(config_path, 'r', encoding='utf-8') as f:
         return yaml.safe_load(f)
 
