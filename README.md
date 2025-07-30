@@ -208,32 +208,7 @@ DeepResearch()
   - `history`: 历史对话记录（列表）
   - 返回：异步生成器，实时输出研究进展
 
-## 项目结构
 
-```
-DeepResearch/
-├── src/
-│   ├── DeepResearch/
-│   │   ├── agent/              # 代理模块
-│   │   │   ├── research_agent.py    # 研究代理
-│   │   │   ├── critic_agent.py      # 批评代理
-│   │   │   └── summary_agent.py     # 总结代理
-│   │   ├── config/             # 配置模块
-│   │   │   ├── config.py            # 配置加载器
-│   │   │   └── config.yaml          # 配置文件
-│   │   ├── memory/             # 记忆模块
-│   │   ├── tools/              # 工具模块
-│   │   │   └── web_search.py        # 网络搜索工具
-│   │   ├── model_client/       # 模型客户端
-│   │   └── deep_research.py    # 主要类
-│   └── frontend/               # Web前端
-│       └── app.py              # Streamlit应用
-├── examples/                   # 使用示例
-│   └── case1.py               # 基本使用示例
-├── start_frontend.py          # 前端启动脚本
-├── requirements.txt           # 依赖列表
-└── README.md                  # 项目说明
-```
 
 ## 故障排除
 
