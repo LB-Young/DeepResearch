@@ -225,7 +225,3 @@ DeepResearch()
 1. 确保Streamlit已安装：`pip install streamlit>=1.28.0`
 2. 检查端口8501是否被占用
 3. 确保所有依赖都已正确安装
-
-## 许可证
-
-[在此添加许可证信息]
