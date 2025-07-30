@@ -4,6 +4,8 @@ agents:
   research_agent:
     model: "deepseek-chat"
     max_steps: 3
+  summary_agent:
+    model: "deepseek-chat"
 
 tools:
   web_search_zhipu:

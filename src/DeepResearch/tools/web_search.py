@@ -19,8 +19,8 @@ class WebSearchZhipuTool(Tool):
     # 工具输入参数定义
     inputs = {
         "keyword": {
-            "type": "string",
-            "description": "搜索关键词",
+            "type": "list",
+            "description": "搜索列表，如['keyword1','keyword2',……]，每个关键词会单独进行搜索，请确保关键词的语义完整性",
             "required": True
         }
     }
@@ -44,35 +44,50 @@ class WebSearchZhipuTool(Tool):
     
     async def arun(self, inputs: Dict[str, Any], properties: Dict[str, Any] = {}) -> Iterator[Dict[str, Any]]:
         # 从输入中提取参数
-        keyword = inputs.get("keyword", "")
+        keywords = inputs.get("keyword", [])
         
         # 参数校验
-        if not keyword:
-            raise Exception("搜索关键词不能为空")
+        if not keywords or not isinstance(keywords, list):
+            raise Exception("搜索关键词列表不能为空且必须是列表格式")
             
         try:
             client = ZhipuAI(api_key=self.api_key)  # 填写您自己的APIKey
             
-            response = client.web_search.web_search(
-                    search_engine="search_std",
-                    search_query=keyword,
-                    count=self.search_num,  # 返回结果的条数，范围1-50，默认10
-                    search_domain_filter="www.sohu.com",  # 只访问指定域名的内容
-                    search_recency_filter="noLimit",  # 搜索指定日期范围内的内容
-                    content_size="high"  # 控制网页摘要的字数，默认medium
-                )
-            
             all_result = []
-
-            for index, item in enumerate(response.search_result):
-                try:  
-                    cur_result = f"## 第{index+1}条搜索结果:\n"
-                    cur_result += f"### 标题: {item.title}\n"
-                    cur_result += f"### 链接: {item.link}\n"
-                    cur_result += f"### 内容: {item.content}\n"
-                    all_result.append(cur_result)
-                except:
+            total_result_count = 0
+            
+            # 为每个关键词进行搜索
+            for keyword_index, keyword in enumerate(keywords):
+                if not keyword.strip():
                     continue
+                    
+                response = client.web_search.web_search(
+                        search_engine="search_std",
+                        search_query=keyword.strip(),
+                        count=self.search_num // len(keywords) + 1,   # 返回结果的条数，范围1-50，默认10
+                        search_domain_filter="www.sohu.com",  # 只访问指定域名的内容
+                        search_recency_filter="noLimit",  # 搜索指定日期范围内的内容
+                        content_size="high"  # 控制网页摘要的字数，默认medium
+                    )
+                
+                # 添加关键词分组标题
+                all_result.append(f"### 关键词 '{keyword}' 的搜索结果:")
+                
+                # 处理当前关键词的搜索结果
+                for index, item in enumerate(response.search_result):
+                    try:  
+                        total_result_count += 1
+                        cur_result = f"#### 第{total_result_count}条搜索结果 (关键词: {keyword}):\n"
+                        cur_result += f"##### 标题: {item.title}\n"
+                        cur_result += f"##### 链接: {item.link}\n"
+                        cur_result += f"##### 内容: {item.content}\n"
+                        all_result.append(cur_result)
+                    except:
+                        continue
+                        
+                # 在关键词结果之间添加分隔符
+                if keyword_index < len(keywords) - 1:
+                    all_result.append("\n" + "="*50 + "\n")
                     
             return "\n\n".join(all_result)
             

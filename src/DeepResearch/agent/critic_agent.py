@@ -13,7 +13,7 @@ class CriticAgent:
         self.agent_info = self.config['agents']['critic_agent']
         self.model = self.agent_info.get("model", None)
 
-        self.think_prompt = self.agent_info.get("critic_prompt_format", "")
+        self.critic_prompt = self.agent_info.get("critic_prompt_format", "")
 
         self.agent_memory = AgentMemory()
 
@@ -59,7 +59,10 @@ class CriticAgent:
         """
         format the query to be a prompt
         """
-        system_prompt_format = CRITIC_PROMPT_FORMAT
+        if len(self.critic_prompt.strip()) == 0:
+            system_prompt_format = CRITIC_PROMPT_FORMAT
+        else:
+            system_prompt_format = self.critic_prompt
         critic_agent_system_messages = [
             {"role": "user", "content": CRITIC_PROMPT_FORMAT},
             {"role": "assistant", "content": "我已经明确了我的角色身份，我会在已有的对话基础上提出更深入的问题。"}

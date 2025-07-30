@@ -8,7 +8,7 @@ sys.path.append(project_root)
 from src.DeepResearch.deep_research import DeepResearch
 
 
-deep_research = DeepResearch(max_steps=10)
+deep_research = DeepResearch()
 
 async def main():
     question = """中国新能源行业在未来五年的发展趋势"""

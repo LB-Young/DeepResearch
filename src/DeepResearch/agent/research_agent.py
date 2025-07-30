@@ -87,6 +87,7 @@ class ResearchAgent(BaseAgent):
 
             # reason step
             reason_response = self.reason()
+        
             async for item in reason_response:
                 yield_status = item['status']
                 yield_content = item['content']
@@ -104,6 +105,7 @@ class ResearchAgent(BaseAgent):
             
             # act step
             act_response = self.act()
+            
             async for item in act_response:
                 yield_content = item['content']
                 yield AgentResponse("research_agent_act", "act finished!", yield_content, deep_research_memory)

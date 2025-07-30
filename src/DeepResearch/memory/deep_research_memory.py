@@ -10,7 +10,14 @@ class DeepResearchMemory(BaseMemory):
         """
         self.history = []
         self.memory = []
+        self.origin_query = None
         self.finished = False
+
+    def set_origin_query(self, query):
+        self.origin_query = query
+
+    def get_origin_query(self):
+        return self.origin_query
 
     def set_history(self, history):
         self.history = history
