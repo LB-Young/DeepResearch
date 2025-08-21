@@ -80,7 +80,7 @@ class WebSearchZhipuTool(Tool):
                         cur_result = f"#### 第{total_result_count}条搜索结果 (关键词: {keyword}):\n"
                         cur_result += f"##### 标题: {item.title}\n"
                         cur_result += f"##### 链接: {item.link}\n"
-                        cur_result += f"##### 内容: {item.content}\n"
+                        cur_result += f"##### 摘要: {item.content}\n"
                         all_result.append(cur_result)
                     except:
                         continue

@@ -11,10 +11,13 @@ from src.DeepResearch.deep_research import DeepResearch
 deep_research = DeepResearch()
 
 async def main():
-    question = """中国新能源行业在未来五年的发展趋势"""
+    question = """芯片行业有哪些值得投资的公司"""
     history = []
-    async for response in deep_research.execute(query=question, history=history):
-        print(response, end="")
+    
+    with open(f'examples/reports/{question}.md', 'w', encoding='utf-8') as f:
+        async for response in deep_research.execute(query=question, history=history):
+            print(response, end="")
+            f.write(response)
     pass
 
 
