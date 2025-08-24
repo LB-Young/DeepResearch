@@ -17,7 +17,6 @@ class BaseMessage(ABC):
         self.message_from = message_from
         self.message_to = message_to
 
-    @abstractmethod
     async def execute_compress(self) -> str:
         """
         执行消息压缩的抽象方法

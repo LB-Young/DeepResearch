@@ -2,18 +2,48 @@ agents:
   critic_agent:
     model: "deepseek-chat"
   research_agent:
-    model: "deepseek-chat"
-    max_steps: 3
+    model: "qwen-plus-2025-01-25"
+    max_steps: 2
   summary_agent:
     model: "deepseek-chat"
+
+max_steps: 2
+
+compress:
+  agent_message:
+    method: "model"   # hard_clip, no_compress, model
+    model: "Qwen/Qwen3-8B"
+    length: 1000
+  history_message:
+    method: "model"
+    model: "Qwen/Qwen3-8B"
+    length: 1000
 
 tools:
   web_search_zhipu:
     api_key: ""
-    num_results: 2
-
+    num_results: 1
+  jina_read_urls:
+    api_key: ""
+    cache_hours: 24
+    
 models:
   - models: ["deepseek-chat"]
     model_platform: "deepseek"
+    platform_api_key: ""
+    temperature: 0.7
+  
+  - models: ["moonshotai/kimi-k2:free", "anthropic/claude-3.7-sonnet", "google/gemini-2.0-flash-exp:free"]
+    model_platform: "openrouter"
+    platform_api_key: ""
+    temperature: 0.7
+
+  - models: ["qwen-plus-2025-01-25", "qwen-plus-latest"]
+    model_platform: "aliyun"
+    platform_api_key: ""
+    temperature: 0.7
+
+  - models: ["Qwen/Qwen3-8B"]
+    model_platform: "siliconflow"
     platform_api_key: ""
     temperature: 0.7

@@ -26,6 +26,8 @@ class ModelClient:
             client = OpenAI(api_key=api_key, base_url="https://dashscope.aliyuncs.com/compatible-mode/v1")
         elif platform == "moonshot":
             client = OpenAI(api_key=api_key, base_url="https://api.moonshot.cn/v1")
+        elif platform == "siliconflow":
+            client = OpenAI(api_key=api_key, base_url="https://api.siliconflow.cn/v1/")
         else:
             raise ValueError(f"Unsupported platform: {platform}")
         return client
@@ -34,10 +36,6 @@ class ModelClient:
         client = self.models_valid.get(model_name, None)
         if client is None:
             raise ValueError(f"Model {model_name} is not valid or not supported")
-        
-        with open("messages.txt", "a", encoding="utf-8") as f:
-            f.write(str(messages))
-            f.write("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n")
         
         if stream:
             stream = client.chat.completions.create(
@@ -54,5 +52,17 @@ class ModelClient:
                 temperature = temperature,
             )
             return response.choices[0].message.content
+
+    def do_chat(self, messages, model_name, temperature=0.7):
+        client = self.models_valid.get(model_name, None)
+        if client is None:
+            raise ValueError(f"Model {model_name} is not valid or not supported")
+
+        response = client.chat.completions.create(
+            model = model_name,
+            messages = messages,
+            temperature = temperature,
+        )
+        return response.choices[0].message.content
 
 model_client = ModelClient(CONFIG.get("models", None))

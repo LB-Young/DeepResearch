@@ -1,8 +1,11 @@
-from .base_message import BaseMessage
 import re
 import asyncio
 import threading
 import time
+from .base_message import BaseMessage
+from src.DeepResearch.config.config import CONFIG
+from src.DeepResearch.model_client.client import model_client
+from src.DeepResearch.utils.constant import COMPRESS_PROMPT_FORMAT
 
 
 class AgentMessage(BaseMessage):
@@ -11,7 +14,16 @@ class AgentMessage(BaseMessage):
         self.compression_task = None
         self.is_compressing = False
         self.compression_completed = False
-    
+
+        self.agent_message_compress_config = CONFIG.get("compress", {}).get("agent_message", {})
+
+        self.compress_method = self.agent_message_compress_config.get("method", "no_compress")
+        if self.compress_method == "model":
+            self.model = self.agent_message_compress_config.get("model", None)
+            if self.model is None:
+                raise ValueError("No model specified for model compression")
+        self.compress_length = self.agent_message_compress_config.get("length", 1000)
+
     def start_compress(self):
         """
         启动后台压缩任务
@@ -32,14 +44,34 @@ class AgentMessage(BaseMessage):
             # 模拟一些压缩处理时间
             time.sleep(0.1)
             
-            if not self.content:
-                self.compressed_content = ""
-            elif len(self.content) > 150:
-                self.compressed_content = self.content[:100] + "……" + self.content[-50:]
-                print(f"[后台压缩] 完成，{len(self.content)} -> {len(self.compressed_content)}")
-            else:
+            if self.compress_method == "hard_clip":
+                if not self.content:
+                    self.compressed_content = ""
+                elif len(self.content) > self.compress_length:
+                    head = int(self.compress_length * 0.9)
+                    tail = int(-1 * self.compress_length * 0.1)
+                    self.compressed_content = self.content[:head] + "……" + self.content[tail:]
+                    print(f"[压缩] 完成，{len(self.content)} -> {len(self.compressed_content)}")
+                else:
+                    self.compressed_content = self.content
+                    print("[压缩] 内容较短，无需压缩")
+            
+            elif self.compress_method == "model":
+                if not self.content:
+                    self.compressed_content = ""
+                elif len(self.content) > self.compress_length:
+                    compress_prompt = COMPRESS_PROMPT_FORMAT.format(content=self.content, content_length=self.compress_length)
+                    messages = [{"role": "user", "content": compress_prompt}]
+                    response = model_client.do_chat(messages, self.model)
+                    print("response:", response)
+                    self.compressed_content = response
+                    print(f"[压缩] 完成，{len(self.content)} -> {len(self.compressed_content)}")
+                else:
+                    self.compressed_content = self.content
+                    print("[压缩] 内容较短，无需压缩")
+            elif self.compress_method == "no_compress":
                 self.compressed_content = self.content
-                print("[后台压缩] 内容较短，无需压缩")
+                print("[压缩] 无需压缩")
             
             self.compression_completed = True
             self.is_compressing = False
@@ -48,53 +80,6 @@ class AgentMessage(BaseMessage):
             print(f"[后台压缩] 失败: {e}")
             self.is_compressing = False
             self.compressed_content = self.content  # 失败时使用原内容
-
-    async def _compress_background(self):
-        """
-        后台压缩逻辑（保留用于兼容性）
-        """
-        try:
-            self.is_compressing = True
-            print(f"[压缩] 开始后台压缩，原长度: {len(self.content)}")
-            
-            # 模拟一些压缩处理时间
-            await asyncio.sleep(0.1)
-            
-            if not self.content:
-                self.compressed_content = ""
-            elif len(self.content) > 150:
-                self.compressed_content = self.content[:100] + "……" + self.content[-50:]
-                print(f"[压缩] 完成，{len(self.content)} -> {len(self.compressed_content)}")
-            else:
-                self.compressed_content = self.content
-                print("[压缩] 内容较短，无需压缩")
-            
-            self.compression_completed = True
-            self.is_compressing = False
-            
-        except Exception as e:
-            print(f"[压缩] 失败: {e}")
-            self.is_compressing = False
-            self.compressed_content = self.content  # 失败时使用原内容
-
-    async def execute_compress(self) -> str:
-        """
-        执行Agent消息的压缩逻辑（同步版本，用于兼容）
-        主要压缩重复的空白字符、移除多余的换行符，保留关键信息
-        
-        Returns:
-            str: 压缩后的内容
-        """
-        if self.compression_completed:
-            return self.compressed_content
-        
-        if self.compression_task:
-            await self.compression_task
-            return self.compressed_content
-        
-        # 直接同步压缩
-        await self._compress_background()
-        return self.compressed_content
 
     async def get_compressed_content(self) -> str:
         """
