@@ -13,40 +13,40 @@ class DeepResearchMemory(BaseMemory):
         self.origin_query = None
         self.finished = False
 
-    def set_origin_query(self, query):
+    async def set_origin_query(self, query):
         self.origin_query = query
 
-    def get_origin_query(self):
+    async def get_origin_query(self):
         return self.origin_query
 
-    def set_history(self, history):
+    async def set_history(self, history):
         self.history = history
 
-    def get_history(self):
+    async def get_history(self):
         return self.history
 
-    def get_finished(self):
+    async def get_finished(self):
         return self.finished
 
-    def add_memory(self, messages):
+    async def add_memory(self, messages):
         if isinstance(messages, list):
             self.memory.extend(messages)
         else:
             self.memory.append(messages)
 
-    def get_query(self):
+    async def get_query(self):
         if self.memory[-1].role == 'user':
             return [self.memory[-1]]
         else:
             return []
 
-    def compress_memory(self):
+    async def compress_memory(self):
         pass
         
-    def get_deep_search_memory(self):
+    async def get_deep_search_memory(self):
         return self.memory
     
-    def clear(self):
+    async def clear(self):
         self.memory = []
         self.history = []
         self.finished = False

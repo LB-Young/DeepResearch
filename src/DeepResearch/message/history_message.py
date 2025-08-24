@@ -6,7 +6,7 @@ class HistoryMessage(BaseMessage):
     def __init__(self, role: str, content: str, message_type: str, message_from: str, message_to: str):
         super().__init__(role, content, message_type, message_from, message_to)
     
-    def execute_compress(self) -> str:
+    async def execute_compress(self) -> str:
         """
         执行历史消息的压缩逻辑
         保留关键信息，移除冗余内容，适合长期存储

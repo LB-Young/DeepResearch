@@ -33,9 +33,9 @@ class DeepResearch:
             )
 
         deep_research_memory = DeepResearchMemory()
-        deep_research_memory.add_memory([query_message])
-        deep_research_memory.set_origin_query(query_message)
-        deep_research_memory.set_history(history)
+        await deep_research_memory.add_memory([query_message])
+        await deep_research_memory.set_origin_query(query_message)
+        await deep_research_memory.set_history(history)
         cur_step = 1
         while cur_step <= self.max_steps:
 
@@ -47,14 +47,15 @@ class DeepResearch:
             async for response in research_response:
                 research_response_content += response.content
                 yield response.content
-
-            deep_research_memory.add_memory(AgentMessage(
+            response_message = AgentMessage(
                 role="assistant",
                 content=research_response_content,
                 message_type="research_agent",
                 message_from="research_agent",
                 message_to="critic_agent"
-            ))
+            )
+            response_message.start_compress()  # 启动后台压缩
+            await deep_research_memory.add_memory(response_message)
 
             cur_step += 1
             if cur_step > self.max_steps:
@@ -68,16 +69,18 @@ class DeepResearch:
             async for response in critic_response:
                 critic_response_content += response.content
                 yield response.content
-                
-            deep_research_memory.add_memory(AgentMessage(
+            
+            response_message = AgentMessage(
                 role="user",
                 content=critic_response_content,
                 message_type="critic_agent",
                 message_from="critic_agent",
                 message_to="research_agent"
-            ))
+            )
+            response_message.start_compress()  # 启动后台压缩
+            await deep_research_memory.add_memory(response_message)
 
-            if deep_research_memory.get_finished():
+            if await deep_research_memory.get_finished():
                 break
 
             
@@ -89,14 +92,15 @@ class DeepResearch:
         async for response in summary_response:
             summary_response_content += response.content
             yield response.content
-            
-        deep_research_memory.add_memory(AgentMessage(
+        response_message = AgentMessage(
             role="assistant",
             content=summary_response_content,
             message_type="summary_agent",
             message_from="summary_agent",
             message_to="research_agent"
-        ))
+        )
+        response_message.start_compress()  # 启动后台压缩
+        await deep_research_memory.add_memory(response_message)
 
         yield f"\n\n---\n\n### ✅ 研究完成，共执行了 {cur_step-1} 个步骤，已为您提供全面的研究结果。"
 

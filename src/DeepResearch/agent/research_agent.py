@@ -1,4 +1,5 @@
 import json
+import asyncio
 from typing import Any, Coroutine, Dict, Iterator
 from .base_agent import BaseAgent
 from src.DeepResearch.memory.agent_memory import AgentMemory
@@ -70,14 +71,14 @@ class ResearchAgent(BaseAgent):
             raise ValueError("Memory cannot be None")
 
         # init cur research_agent input info
-        self.agent_memory.clear()
-        self.agent_memory.set_history(deep_research_memory.get_history())
-        deep_research_memorys = deep_research_memory.get_deep_search_memory()
-        deep_research_query = deep_research_memory.get_query()
+        await self.agent_memory.clear()
+        await self.agent_memory.set_history(await deep_research_memory.get_history())
+        deep_research_memorys = await deep_research_memory.get_deep_search_memory()
+        deep_research_query = await deep_research_memory.get_query()
         if deep_research_query != 0:
             deep_research_memorys = deep_research_memorys[:-1]
-        self.agent_memory.set_deep_research_memory(deep_research_memorys)
-        self.agent_memory.add_memory(deep_research_query)
+        await self.agent_memory.set_deep_research_memory(deep_research_memorys)
+        await self.agent_memory.add_memory(deep_research_query)
 
         max_steps = self.agent_info.get("max_steps", 10)
         step = 0
@@ -96,7 +97,7 @@ class ResearchAgent(BaseAgent):
                 if yield_status != "finished!":
                     yield AgentResponse("research_agent_reason", "reasoning……", yield_content, deep_research_memory)
                 else:
-                    full_response_content = self.agent_memory.get_full_response_content()
+                    full_response_content = await self.agent_memory.get_full_response_content()
                     # deep_research_memory.add_memory({"role":"assistant", "content":full_response_content})
                     yield AgentResponse("research_agent_reason", "finished!", yield_content, deep_research_memory)
             
@@ -119,9 +120,10 @@ class ResearchAgent(BaseAgent):
         2. consider which tool need to be used
         3. generate the tool input parameters.
         """
-        all_history_messages, all_deep_research_messages, all_messages = self.agent_memory.get_model_messages()
+        all_history_messages, all_deep_research_messages, all_messages = await self.agent_memory.get_model_messages()
         explore_system_messages = await self.get_explore_system_messages()
         all_request_messages = all_history_messages + all_deep_research_messages + explore_system_messages + all_messages
+
         response = await model_client.chat(all_request_messages, self.model)
         self.full_content = ""
         for item in response:
@@ -137,7 +139,8 @@ class ResearchAgent(BaseAgent):
             message_from="research_agent_reason",
             message_to="research_agent_act"
         )
-        self.agent_memory.add_memory(reason_message)
+        reason_message.start_compress()  # 启动后台压缩
+        await self.agent_memory.add_memory(reason_message)
         
         yield {
             "status": "finished!",
@@ -206,7 +209,10 @@ class ResearchAgent(BaseAgent):
             message_from="research_agent_act",
             message_to="research_agent_reason"
             )
-        self.agent_memory.add_memory(act_message)
+
+        act_message.start_compress()  # 启动后台压缩
+
+        await self.agent_memory.add_memory(act_message)
 
     async def get_explore_system_messages(self):
         """

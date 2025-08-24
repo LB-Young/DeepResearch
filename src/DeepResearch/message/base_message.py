@@ -12,13 +12,13 @@ class BaseMessage(ABC):
         """
         self.role = role
         self.content = content
-        self.compressed_content = ""
+        self.compressed_content = None
         self.message_type = message_type
         self.message_from = message_from
         self.message_to = message_to
 
     @abstractmethod
-    def execute_compress(self) -> str:
+    async def execute_compress(self) -> str:
         """
         执行消息压缩的抽象方法
         子类需要实现具体的压缩逻辑
@@ -28,14 +28,15 @@ class BaseMessage(ABC):
         """
         pass
     
-    def get_compressed_content(self) -> str:
+    async def get_compressed_content(self) -> str:
         """
         获取压缩后的内容
         
         Returns:
             str: 压缩后的内容，如果未压缩则返回原内容
         """
+        print("self.compressed_content:", self.compressed_content)
         return self.compressed_content if self.compressed_content else self.content
 
-    def get_role(self):
+    async def get_role(self):
         return self.role

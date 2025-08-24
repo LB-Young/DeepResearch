@@ -35,6 +35,10 @@ class ModelClient:
         if client is None:
             raise ValueError(f"Model {model_name} is not valid or not supported")
         
+        with open("messages.txt", "a", encoding="utf-8") as f:
+            f.write(str(messages))
+            f.write("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n")
+        
         if stream:
             stream = client.chat.completions.create(
                 model = model_name,

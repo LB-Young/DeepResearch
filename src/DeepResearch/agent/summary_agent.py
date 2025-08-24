@@ -22,22 +22,22 @@ class SummaryAgent:
             raise ValueError("Memory cannot be None")
 
         # init cur research_agent input info
-        self.agent_memory.clear()
-        self.agent_memory.set_history(deep_research_memory.get_history())
+        await self.agent_memory.clear()
+        await self.agent_memory.set_history(await deep_research_memory.get_history())
 
-        deep_research_memorys = deep_research_memory.get_deep_search_memory()
-        deep_research_query = deep_research_memory.get_query()
+        deep_research_memorys = await deep_research_memory.get_deep_search_memory()
+        deep_research_query = await deep_research_memory.get_query()
 
         if len(deep_research_query) != 0:
             deep_research_memorys = deep_research_memorys[:-1]
-        self.agent_memory.set_deep_research_memory(deep_research_memorys)
-        self.agent_memory.add_memory(deep_research_query)
+        await self.agent_memory.set_deep_research_memory(deep_research_memorys)
+        await self.agent_memory.add_memory(deep_research_query)
 
-        all_history_messages, all_deep_research_messages, all_messages = self.agent_memory.get_model_messages()
+        all_history_messages, all_deep_research_messages, all_messages = await self.agent_memory.get_model_messages()
 
         summary_agent_system_messages = await self.get_summary_agent_system_messages()
 
-        origin_query = deep_research_memory.get_origin_query()
+        origin_query = await deep_research_memory.get_origin_query()
         summary_query = {
             "role": "user",
             "content": "为我的初始问题：“{origin_query.content}”生成一个完整的回答总结。"
