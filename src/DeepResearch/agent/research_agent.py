@@ -16,6 +16,7 @@ class ResearchAgent(BaseAgent):
         if self.config['agents'].get('research_agent', None) is None:
             raise ValueError("Search agent configuration cannot be None")
         self.agent_info = self.config['agents']['research_agent']
+        self.mode = self.agent_info.get("mode", "explore")
         self.model = self.agent_info.get("model", None)
         if self.model is None:
             raise ValueError("Model must be specified for the search agent")
@@ -83,35 +84,42 @@ class ResearchAgent(BaseAgent):
         max_steps = self.agent_info.get("max_steps", 10)
         step = 0
 
-        while step < max_steps:
-            step += 1
+        if self.mode == "explore":
+            while step < max_steps:
+                step += 1
 
-            # reason step
-            reason_response = self.reason()
+                # reason step
+                reason_response = self.reason()
+            
+                async for item in reason_response:
+                    yield_status = item['status']
+                    yield_content = item['content']
+
+                    # "finished!" status represent the complete of this deep_research query instead of cur reason step
+                    if yield_status != "finished!":
+                        yield AgentResponse("research_agent_reason", "reasoning……", yield_content, deep_research_memory)
+                    else:
+                        full_response_content = await self.agent_memory.get_full_response_content()
+                        # deep_research_memory.add_memory({"role":"assistant", "content":full_response_content})
+                        yield AgentResponse("research_agent_reason", "finished!", yield_content, deep_research_memory)
+                
+                if "=>#" not in self.full_content:
+                    break
+                
+                # act step
+                act_response = self.act()
+                
+                async for item in act_response:
+                    yield_content = item['content']
+                    yield AgentResponse("research_agent_act", "act finished!", yield_content, deep_research_memory)
+                
+                yield AgentResponse("research_agent_act", "finished!", "", deep_research_memory)
         
-            async for item in reason_response:
-                yield_status = item['status']
-                yield_content = item['content']
+        elif self.mode == "react":
+            pass
 
-                # "finished!" status represent the complete of this deep_research query instead of cur reason step
-                if yield_status != "finished!":
-                    yield AgentResponse("research_agent_reason", "reasoning……", yield_content, deep_research_memory)
-                else:
-                    full_response_content = await self.agent_memory.get_full_response_content()
-                    # deep_research_memory.add_memory({"role":"assistant", "content":full_response_content})
-                    yield AgentResponse("research_agent_reason", "finished!", yield_content, deep_research_memory)
-            
-            if "=>#" not in self.full_content:
-                break
-            
-            # act step
-            act_response = self.act()
-            
-            async for item in act_response:
-                yield_content = item['content']
-                yield AgentResponse("research_agent_act", "act finished!", yield_content, deep_research_memory)
-            
-            yield AgentResponse("research_agent_act", "finished!", "", deep_research_memory)
+        else:
+            raise ValueError(f"Invalid mode: {self.mode}, only support explore, react!")
 
     async def reason(self):
         """
@@ -139,9 +147,9 @@ class ResearchAgent(BaseAgent):
             message_from="research_agent_reason",
             message_to="research_agent_act"
         )
-        reason_message.start_compress()  # 启动后台压缩
         await self.agent_memory.add_memory(reason_message)
         
+        reason_message.start_compress()  # 启动后台压缩
         yield {
             "status": "finished!",
             "content": ""
@@ -192,7 +200,7 @@ class ResearchAgent(BaseAgent):
                         }
                     yield {
                         "status": "act finished!",
-                        "content": result
+                        "content": ""
                     }
                     self.act_full_content = result
             except:
@@ -209,10 +217,9 @@ class ResearchAgent(BaseAgent):
             message_from="research_agent_act",
             message_to="research_agent_reason"
             )
+        await self.agent_memory.add_memory(act_message)
 
         act_message.start_compress()  # 启动后台压缩
-
-        await self.agent_memory.add_memory(act_message)
 
     async def get_explore_system_messages(self):
         """

@@ -27,6 +27,7 @@ class CriticAgent:
         await self.agent_memory.set_history(await deep_research_memory.get_history())
         deep_research_memorys = await deep_research_memory.get_deep_search_memory()
         deep_research_query = await deep_research_memory.get_query()
+        origin_query = await deep_research_memory.get_origin_query()
         if len(deep_research_query) != 0:
             deep_research_memorys = deep_research_memorys[:-1]
         await self.agent_memory.set_deep_research_memory(deep_research_memorys)
@@ -40,7 +41,7 @@ class CriticAgent:
 
         critic_query = {
             "role": "user",
-            "content": "请根据我之前的对话，给我一个更深入的问题。"
+            "content": f"请根据我的初始问题：“{origin_query}”。以及之前的之前的对话，给我一个更深入的问题，直接返回新的问题即可。"
         }
 
         all_request_messages = all_history_messages + all_deep_research_messages + critic_agent_system_messages + [critic_query]

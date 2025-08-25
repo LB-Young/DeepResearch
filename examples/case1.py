@@ -11,7 +11,7 @@ from src.DeepResearch.deep_research import DeepResearch
 deep_research = DeepResearch()
 
 async def main():
-    question = """新能源汽车行业有哪些值得投资的公司"""
+    question = """meta将在2025年09月将要发布的ai眼镜是什么型号？这款产品的生产合作商有哪些？给我一个分析报告。"""
     history = []
     
     with open(f'examples/reports/{question}.md', 'w', encoding='utf-8') as f:
